@@ -173,7 +173,6 @@ def create_windows(image, image_2, image_3, mask, labels, window_size=16):
         list: Una lista di tuple (finestra, label).
     """
     dataset = []
-    print(image.shape)
     c, h, w = image.shape
     pad = window_size // 2  # Padding necessario per centrare il pixel
 
@@ -185,8 +184,6 @@ def create_windows(image, image_2, image_3, mask, labels, window_size=16):
         padded_image_2 = torch.nn.functional.pad(image_2, (pad, pad, pad, pad), "replicate")
     if image_3 != None:
         padded_image_3 = torch.nn.functional.pad(image_3, (pad, pad, pad, pad), "replicate")
-    print("Padded image shape: ", padded_image.shape)
-    print("Padded image shape2: ", padded_image_2.shape)
 
     # Trova le coordinate (riga, colonna) dei pixel True nella maschera
     rows, cols = torch.where(mask)
@@ -221,19 +218,16 @@ def create_datasets(data, hor_info, vert_info, vol_info, split_mode, labels, win
     new_data = [None, None, None]
 
     if hor_info[0] != 0:
-        #hor_data = reduce_data_bands(data, hor_info[0], hor_info[1])
-        #new_data[0] = torch.from_numpy(hor_data)
-        new_data[0] = torch.rand(16, 512, 614)
+        hor_data = reduce_data_bands(data, hor_info[0], hor_info[1])
+        new_data[0] = torch.from_numpy(hor_data)
     
     if vert_info[0] != 0:
-        #vert_data = reduce_data_bands(data, vert_info[0], vert_info[1])
-        #new_data[1] = torch.from_numpy(vert_data)
-        new_data[1] = torch.rand(16, 512, 614)
+        vert_data = reduce_data_bands(data, vert_info[0], vert_info[1])
+        new_data[1] = torch.from_numpy(vert_data)
     
     if vol_info[0] != 0:
-        #vol_data = reduce_data_bands(data, vol_info[0] * 4, vol_info[1])
-        #new_data[2] = torch.from_numpy(vol_data)
-        new_data[2] = torch.rand(64, 512, 614)
+        vol_data = reduce_data_bands(data, vol_info[0] * 4, vol_info[1])
+        new_data[2] = torch.from_numpy(vol_data)
     
     if split_mode[0] == True:
         mask = split_by_percentage(labels, split_mode[1])

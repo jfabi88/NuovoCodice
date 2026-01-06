@@ -14,6 +14,6 @@ blocks: 1
 dropout_gatr: 0.4
 dropout_final: 0.2
 lr: 0.001
-max_epochs: 400
+max_epochs: 2
 patience: 20
 window_size: 16

@@ -6,6 +6,7 @@ import torchmetrics
 import numpy as np
 from torchmetrics.classification import MulticlassAccuracy
 import pytorch_lightning as pl
+import os
 
 class HGATr_LIGHT(pl.LightningModule):
     def __init__(
@@ -72,7 +73,6 @@ class HGATr_LIGHT(pl.LightningModule):
         images, labels = batch
 
         logits = self(images).logits
-
         loss = self.loss_function(logits, labels)
 
         self.manual_backward(loss, retain_graph=True)
@@ -82,45 +82,42 @@ class HGATr_LIGHT(pl.LightningModule):
         optimizer.zero_grad()  # Azzera i gradienti
 
         # Aggiorna l'accuracy con i nuovi dati
-        self.train_accuracy.update(logits, labels)
-        self.train_precision.update(logits, labels)
-        self.train_recall.update(logits, labels)
         self.train_accuracy_overall.update(logits, labels)
         self.train_accuracy_avg.update(logits, labels)
         self.train_kappa.update(logits, labels)
 
-        self.log("loss", loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=images[0].shape[0])
+        self.log(
+            "train_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=torch.stack(images[0], dim=0).shape[0]
+        )
 
         return loss
 
 
     def on_train_epoch_end(self):
-        # Calcola la loss media dell'epoca
-        avg_train_loss = self.trainer.callback_metrics["loss"].item()
-        train_acc = self.train_accuracy.compute()
-        train_precision = self.train_precision.compute()
-        train_recall = self.train_recall.compute()
         train_accuracy_overall = self.train_accuracy_overall.compute()
         train_accuracy_avg = self.train_accuracy_avg.compute()
         train_kappa = self.train_kappa.compute()
 
-        self.log("accuracy_overall", train_accuracy_overall, prog_bar=True)
-        self.log("accuracy_avg", train_accuracy_avg)
-        self.log("kappa", train_kappa)
+        self.log("train_accuracy_overall", train_accuracy_overall, on_epoch=True, prog_bar=True)
+        self.log("train_accuracy_avg", train_accuracy_avg, on_epoch=True)
+        self.log("train_kappa", train_kappa, on_epoch=True)
 
 
         # Stampa i risultati alla fine dell'epoca
         print(
-            f"[Train] Epoch: {self.current_epoch}  Loss: {avg_train_loss:.4f}  "
+            f"[Train] Epoch: {self.current_epoch}"
             f"Accuracy Overall: {train_accuracy_overall:.4f}  "
             f"Accuracy Avg: {train_accuracy_avg:.4f}  "
-            f"Kappa: {train_kappa:.4f}"
+            f"Kappa: {train_kappa:.4f}",
+            flush=True,
         )
 
         # Reset delle metriche per la prossima epoca
-        self.train_accuracy.reset()
-        self.train_precision.reset()
-        self.train_recall.reset()
         self.train_accuracy_overall.reset()
         self.train_accuracy_avg.reset()
         self.train_kappa.reset()
@@ -134,16 +131,19 @@ class HGATr_LIGHT(pl.LightningModule):
         sample_loss = self.loss_function(logits, labels)
 
         # Update all metrics in the collection
-        self.accuracy.update(logits, labels)
-        self.conf_matrix.update(logits, labels)
-        self.precision.update(logits, labels)
-        self.recall.update(logits, labels)
         self.accuracy_overall.update(logits, labels)
         self.accuracy_avg.update(logits, labels)
         self.kappa.update(logits, labels)
 
         # Log loss per batch
-        self.log("val_loss", sample_loss, on_epoch=True, prog_bar=True, batch_size=images[0].shape[0])
+        self.log(
+            "val_loss",
+            sample_loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=torch.stack(images[0], dim=0).shape[0]
+        )
 
         return {"loss": sample_loss}
 
@@ -156,24 +156,20 @@ class HGATr_LIGHT(pl.LightningModule):
         computed_accuracy_avg = self.accuracy_avg.compute()
         computed_kappa = self.kappa.compute()
 
-        self.log("val_accuracy_overall", computed_accuracy_overall, prog_bar=True)
-        self.log("val_accuracy_avg", computed_accuracy_avg)
-        self.log("val_kappa", computed_kappa)
-
+        self.log("val_accuracy_overall", computed_accuracy_overall, on_epoch=True, prog_bar=True)
+        self.log("val_accuracy_avg", computed_accuracy_avg, on_epoch=True)
+        self.log("val_kappa", computed_kappa, on_epoch=True)
 
         print(
             f"[Validation] Epoch: {self.current_epoch}  "
             f"Loss: {avg_val_loss:.4f}  "
             f"Accuracy Overall: {computed_accuracy_overall:.4f}  "
             f"Accuracy Avg: {computed_accuracy_avg:.4f}  "
-            f"Kappa: {computed_kappa:.4f}"
+            f"Kappa: {computed_kappa:.4f}",
+            flush=True
         )
 
         # Reset metrics for the next epoch
-        self.accuracy.reset()
-        self.conf_matrix.reset()
-        self.precision.reset()
-        self.recall.reset()
         self.accuracy_overall.reset()
         self.accuracy_avg.reset()
         self.kappa.reset()
@@ -222,3 +218,28 @@ class HGATr_LIGHT(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=1e-4)
+    
+
+    def save_test_results(self, output_dir, params=None):
+        """
+        Salva i risultati del test in un file .txt comprensivo di metriche globali e per classe.
+        """
+        output_path = os.path.join(output_dir, "results.txt")
+        
+        with open(output_path, "w") as f:
+            if params is not None:
+                f.write("Model parameters:\n")
+                for k, v in params.items():
+                    f.write(f"{k}: {v}\n")
+                f.write("\n")
+            
+            f.write("Global test results:\n")
+            f.write(f"Accuracy Overall: {self.test_results[0]:.4f}\n")
+            f.write(f"Accuracy Avg: {self.test_results[1]:.4f}\n")
+            f.write(f"Kappa: {self.test_results[2]:.4f}\n\n")
+            
+            f.write("Accuracy per class:\n")
+            for i, acc in enumerate(self.test_per_class_accuracies):
+                f.write(f"Classe {i} ({self.class_names[i]}): {acc:.4f}\n")
+        
+        print(f"Test results saved to {output_path}")

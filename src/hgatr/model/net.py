@@ -28,7 +28,7 @@ class HGatr(nn.Module):
         self.positional_dim = positional_dim
         self.crop_size = crop_size
 
-        self.preprocessor = HGATrEmbeddingTriplePatchToMultivector(window_size, crop_size)
+        self.preprocessor = HGATrEmbeddingTriplePatchToMultivector(window_size, crop_size, device)
 
         self.mv_channels = mv_in_channels
 
@@ -101,7 +101,6 @@ class HGatr(nn.Module):
         if self.positional_dim:
           positional_emb = self.position_encoding.reshape(x.shape[1], self.positional_dim)
           positional_emb = positional_emb.unsqueeze(0).repeat(x.shape[0], 1, 1)
-          print(x.shape, positional_emb.shape)
           out_mv, _ = self.gatr(x, scalars = positional_emb)
         else:
           out_mv, _ = self.gatr(x, None)

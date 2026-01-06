@@ -86,13 +86,14 @@ def extract_3D_multivector(img, window_size, crop_size, stride=(2,2,2), device="
 
 
 class HGATrEmbeddingTriplePatchToMultivector(nn.Module):
-    def __init__(self, window_size, crop_size):
+    def __init__(self, window_size, crop_size, device="cpu"):
         super().__init__()
 
         self.window_size = window_size
         self.crop_size = crop_size
+        self.device = device
 
-    def forward(self, x, device="cpu"):
+    def forward(self, x):
 
         outputs = []
 
@@ -100,19 +101,21 @@ class HGATrEmbeddingTriplePatchToMultivector(nn.Module):
         x_2 = x[1]
         x_3 = x[2]
 
-        if x_1 != None:
+        if any(w is not None for w in x_1):
+            x_1 = torch.stack(x_1, dim=0)
             res_1 = extract_color_patches(x_1, 4, 4)
             outputs.append(res_1)
 
-        if x_2 != None:
+        if any(w is not None for w in x_2):
+            x_2 = torch.stack(x_2, dim=0)
             res_2 = extract_multivector_by_channel(x_2, 4, 4)
             _, _, _, C = res_2.shape
             chunks = torch.chunk(res_2, C // 16, dim=-1)  # ogni pezzo ha 16 canali
             outputs.extend(chunks)
 
-
-        if x_3 != None:
-            res_3 = extract_3D_multivector(x_3, self.window_size, self.crop_size, device=device)
+        if any(w is not None for w in x_3):
+            x_3 = torch.stack(x_3, dim=0)
+            res_3 = extract_3D_multivector(x_3, self.window_size, self.crop_size, device=self.device)
             outputs.append(res_3)
 
         res = torch.cat(outputs, dim=-2)
