@@ -39,7 +39,7 @@ class HGatr(nn.Module):
 
         if positional_dim != 0:
           self.gatr = GATr(
-            in_mv_channels = in_channels,
+            in_mv_channels = mv_in_channels,
             out_mv_channels = out_channels,
             hidden_mv_channels = hidden_dim,
             in_s_channels = positional_dim,
@@ -52,7 +52,7 @@ class HGatr(nn.Module):
           )
         else:
           self.gatr = GATr(
-            in_mv_channels = in_channels,
+            in_mv_channels = mv_in_channels,
             out_mv_channels = out_channels,
             hidden_mv_channels = hidden_dim,
             attention = att_config,
@@ -96,17 +96,15 @@ class HGatr(nn.Module):
                 nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        x, scalars = self.preprocessor(x)
+        x = self.preprocessor(x)
 
         if self.positional_dim:
           positional_emb = self.position_encoding.reshape(x.shape[1], self.positional_dim)
           positional_emb = positional_emb.unsqueeze(0).repeat(x.shape[0], 1, 1)
-          if scalars != None:
-            positional_emb = torch.cat((positional_emb, scalars), dim=-1)
-
+          print(x.shape, positional_emb.shape)
           out_mv, _ = self.gatr(x, scalars = positional_emb)
         else:
-          out_mv, _ = self.gatr(x, scalars)
+          out_mv, _ = self.gatr(x, None)
         
         out = out_mv.permute(0, 2, 1, -1)
         out = self.classification(out)

@@ -1,14 +1,16 @@
+from pathlib import Path
 from scipy.io import loadmat
 
+DATA_DIR = Path(__file__).parent / "data"
 
 def load_ip():
     info = {}
 
     # Carica l'immagine iperspettrale
-    data = loadmat('Indian_pines_corrected.mat')['indian_pines_corrected']  # shape: (145, 145, 200)
+    data = loadmat(DATA_DIR / 'Indian_pines_corrected.mat')['indian_pines_corrected']  # shape: (145, 145, 200)
 
     # Carica le etichette
-    gt = loadmat('Indian_pines_gt.mat')['indian_pines_gt']  # shape: (145, 145)
+    gt = loadmat(DATA_DIR / 'Indian_pines_gt.mat')['indian_pines_gt']  # shape: (145, 145)
 
     info["data_class_names"] = [
         "Alfalfa", "Corn-notill", "Corn-mintill", "Corn", "Grass-pasture", "Grass-trees",
@@ -26,11 +28,11 @@ def load_ksc():
     info = {}
 
     # Carica l'immagine iperspettrale
-    ksc_data = loadmat('KSC_corrected.mat')
+    ksc_data = loadmat(DATA_DIR / 'KSC_corrected.mat')
     data = ksc_data['KSC']
 
     # Carica le etichette
-    ksc_labels = loadmat('KSC_gt.mat')
+    ksc_labels = loadmat(DATA_DIR / 'KSC_gt.mat')
     gt = ksc_labels['KSC_gt']
 
     info["data_class_names"] = ["Scrub", "Willow swamp", "Cabbage palm hammock", "Cabbage palm/oak hammock",
@@ -46,11 +48,11 @@ def load_ksc():
 def load_sa():
     info = {}
 
-    ksc_data = loadmat('Salinas_corrected.mat')
+    ksc_data = loadmat(DATA_DIR / 'Salinas_corrected.mat')
     data = ksc_data['salinas_corrected']
 
     # Carica le etichette
-    ksc_labels = loadmat('Salinas_gt.mat')
+    ksc_labels = loadmat(DATA_DIR / 'Salinas_gt.mat')
     gt = ksc_labels['salinas_gt']
 
     info["data_class_names"] = [
@@ -68,11 +70,11 @@ def load_sa():
 def load_pu():
     info = {}
 
-    ksc_data = loadmat('PaviaU.mat')
+    ksc_data = loadmat(DATA_DIR / 'PaviaU.mat')
     data = ksc_data['paviaU']
 
     # Carica le etichette
-    ksc_labels = loadmat('PaviaU_gt.mat')
+    ksc_labels = loadmat(DATA_DIR / 'PaviaU_gt.mat')
     gt = ksc_labels['paviaU_gt']
 
     info["data_class_names"] = ["Asphalt", "Meadows", "Gravel", "Trees", "Painted metal sheets	", "Bare Soil	", "Bitumen", "Self-Blocking Bricks", "Shadows"]

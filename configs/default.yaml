@@ -1,7 +1,7 @@
-h_ch: 16
-ver_ch: 16
-vol_ch: 16
-split: 0.7
+h_ch: [16, False]
+ver_ch: [16, True]
+vol_ch: [16, True]
+split: [True, 0.1] # [percentage, value]
 batch_size: 8
 in_channels: 1
 out_channels: 13

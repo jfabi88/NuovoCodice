@@ -4,7 +4,12 @@ import numpy as np
 
 ## The blade is a multivector <x>_k operator. Applied to a multivector x,
 ## it returns x with only the components of grade k.
-def blade_operator(mv_dimension, grade_components, ga_permutation):
+def blade_operator(mv_dimension=16, grade_components=[1,4,6,4,1], ga_permutation=[
+    [[0,1]],
+    [[2,5],[3,6],[4,7]],
+    [[8,11],[9,12],[10,13]],
+    [[14,15]]
+]):
     """
     Generates a blade operator matrix for the geometric algebra
 

@@ -5,9 +5,10 @@ from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
 from datetime import datetime
 from pathlib import Path
+import torch
 
 from hgatr.model.net import HGatr
-from lighting import HGATr_LIGHT
+from hgatr.train.lighting import HGATr_LIGHT
 from hgatr.dataset.dataset import create_datasets
 from hgatr.dataset.loader import load_dataset
 
@@ -36,7 +37,7 @@ def train(parameters, blade, dataset_name, device):
         parameters["ver_ch"],
         parameters["vol_ch"],
         parameters["split"],
-        gt,
+        torch.from_numpy(gt),
         parameters["window_size"]
     )
 
@@ -52,10 +53,8 @@ def train(parameters, blade, dataset_name, device):
         in_channels=parameters["in_channels"],
         out_channels=parameters["out_channels"],
         blade=blade,
-        blade_len=blade.shape[0],
         hidden_dim=parameters["hidden_dim"],
         n_heads=parameters["n_heads"],
-        n_classes=info["n_classes"],
         crop_size=parameters["window_size"] // 4,
         positional_dim=parameters["positional_dim"],
         mv_in_channels=parameters["mv_in_channels"],
@@ -88,7 +87,7 @@ def train(parameters, blade, dataset_name, device):
         max_epochs=parameters["max_epochs"],
         callbacks=[checkpoint_loss]
     )
-
+    
     trainer_hgatr.fit(hgatr_light, train_dataloader, val_dataloader)
 
     hgatr_l = HGatr(

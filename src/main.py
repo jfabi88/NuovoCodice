@@ -23,8 +23,11 @@ def main():
     )
     args = parser.parse_args()
 
+    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+    CONFIGS_DIR = PROJECT_ROOT / "configs"
+
     dataset_name = args.dataset
-    config_path = Path(args.config)
+    config_path = CONFIGS_DIR / args.config
 
     if not config_path.exists():
         raise FileNotFoundError(f"File not found: {config_path}")

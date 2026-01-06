@@ -61,6 +61,7 @@ class HGATr_LIGHT(pl.LightningModule):
         self.vit = model
         self.output = namedtuple('Output', ['logits'])
 
+
     def forward(self, x):
         logits = self.vit(x)
 

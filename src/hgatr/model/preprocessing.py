@@ -108,7 +108,7 @@ class HGATrEmbeddingTriplePatchToMultivector(nn.Module):
             res_2 = extract_multivector_by_channel(x_2, 4, 4)
             _, _, _, C = res_2.shape
             chunks = torch.chunk(res_2, C // 16, dim=-1)  # ogni pezzo ha 16 canali
-            outputs.append(chunks)
+            outputs.extend(chunks)
 
 
         if x_3 != None:
