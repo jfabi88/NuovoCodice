@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 from datetime import datetime
 from pathlib import Path
 import torch
+import numpy as np
+from sklearn.utils.class_weight import compute_class_weight
 
 from hgatr.model.net import HGatr
 from hgatr.train.lighting import HGATr_LIGHT
@@ -29,7 +31,7 @@ def collate_fn(batch):
 
 
 
-def train(parameters, blade, dataset_name, device, run_dir):
+def train(parameters, blade, dataset_name, device, device_i, run_dir):
 
     data, gt, info = load_dataset(dataset_name)
 
@@ -70,12 +72,18 @@ def train(parameters, blade, dataset_name, device, run_dir):
         device=device,
     ).to(device)
 
+    labels_list = [label for _, _, _, label in train_dataset.data_windows]
+    unique_classes = np.unique(labels_list) # Get unique class labels
+    class_weights = compute_class_weight(class_weight='balanced', classes=unique_classes, y=labels_list)
+    class_weights = torch.tensor(class_weights, dtype=torch.float32)
+    class_weights = torch.clamp(class_weights, min=0.5, max=5.0)
+
     hgatr_light = HGATr_LIGHT(
         model=hgatr,
         n_classes=info["n_classes"],
         learning_rate=parameters["lr"],
         data_class_names=info["data_class_names"],
-        weights=None,
+        weights=class_weights,
     )
 
     checkpoint_loss = ModelCheckpoint(
@@ -87,12 +95,13 @@ def train(parameters, blade, dataset_name, device, run_dir):
     )
 
     csv_logger = CSVLogger(save_dir=str(run_dir / "logs"), name="")
+    early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=0.0, patience=parameters["patience"], verbose=False, mode="min")
 
     trainer_hgatr = Trainer(
         logger=csv_logger,
-        devices=1,
+        devices=[device_i],
         max_epochs=parameters["max_epochs"],
-        callbacks=[checkpoint_loss],
+        callbacks=[checkpoint_loss, early_stop_callback],
         enable_progress_bar=False,
     )
     
@@ -120,7 +129,7 @@ def train(parameters, blade, dataset_name, device, run_dir):
         n_classes=info["n_classes"],
         learning_rate=parameters["lr"],
         data_class_names=info["data_class_names"],
-        weights=None,
+        weights=class_weights,
     )
 
     trainer_hgatr.test(hgatr_l_light, dataloaders=test_dataloader, verbose=False)

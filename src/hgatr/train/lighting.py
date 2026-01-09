@@ -92,7 +92,7 @@ class HGATr_LIGHT(pl.LightningModule):
             on_step=False,
             on_epoch=True,
             prog_bar=True,
-            batch_size=torch.stack(images[0], dim=0).shape[0]
+            #batch_size=torch.stack(images[0], dim=0).shape[0]
         )
 
         return loss
@@ -142,7 +142,7 @@ class HGATr_LIGHT(pl.LightningModule):
             on_step=False,
             on_epoch=True,
             prog_bar=True,
-            batch_size=torch.stack(images[0], dim=0).shape[0]
+            #batch_size=torch.stack(images[0], dim=0).shape[0]
         )
 
         return {"loss": sample_loss}

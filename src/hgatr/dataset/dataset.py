@@ -173,7 +173,6 @@ def create_windows(image, image_2, image_3, mask, labels, window_size=16):
         list: Una lista di tuple (finestra, label).
     """
     dataset = []
-    c, h, w = image.shape
     pad = window_size // 2  # Padding necessario per centrare il pixel
 
     # Applica un padding all'immagine per gestire i bordi
